@@ -60,8 +60,8 @@ export function CodeBlock({ code, language = 'rust', showOutput = true, output }
       let processedLine = escapeHtml(line)
         // 处理字符串
         .replace(/"([^"\\]|\\.)*"/g, '<span class="code-string">$&</span>')
-        // 处理字符
-        .replace(/'([^'\\]|\\.)*'/g, '<span class="code-char">$&</span>')
+        // 处理字符（仅匹配 Rust 字符字面量，如 'a'、'\\n'，避免误伤生命周期标注 'a）
+        .replace(/'(?:\\.|[^'\\])'/g, '<span class="code-char">$&</span>')
         // 处理注释
         .replace(/(\/\/.*$)/g, '<span class="code-comment">$1</span>')
         // 处理数字

@@ -358,7 +358,12 @@ fn main() {
         explanation: `在下面的核心函数里会出现这样的签名：
 • search<'a>(..., contents: &'a str, ...) -> Vec<&'a str>
 
-这里的 'a 不是“让引用活得更久”，而是“声明返回值中的引用，必须来自 contents，并且不会比 contents 活得更久”。
+先抓住 5 个高频结论：
+• 生命周期是“引用能活多久”的标签，用来保证返回引用不会悬垂
+• 'a 只是名字，不是关键字；你也可以写成 'b、'c
+• 生命周期参数写在函数名后：fn foo<'a>(...)
+• contents: &'a str -> Vec<&'a str> 表示返回值借用自 contents
+• 生命周期标注描述“关系”，不是“把引用延长寿命”
 
 为什么要标注：
 • 返回的是引用（&str），不是新分配的 String
@@ -366,7 +371,9 @@ fn main() {
 • 用同一个 'a 把输入与输出关联起来，借用关系就清晰了
 
 如果你对生命周期还不熟，可以先记住一句实用规则：
-• “函数返回引用时，要么返回来自某个输入引用的数据，要么返回 'static 引用；不能凭空造出悬垂引用”`,
+• “函数返回引用时，要么返回来自某个输入引用的数据，要么返回 'static 引用；不能凭空造出悬垂引用”
+
+补充：当引用来自不同来源时，可能需要多个生命周期参数，例如 fn f<'a, 'b>(x: &'a str, y: &'b str) -> ...。`,
         language: "rust",
         code: `// 返回值借用自 contents
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
@@ -376,6 +383,11 @@ pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
         .collect()
 }
 
+// 'a / 'b 只是标签名，不同来源可分别标注
+fn pick_prefix<'a, 'b>(x: &'a str, y: &'b str) -> (&'a str, &'b str) {
+    (x.split_whitespace().next().unwrap_or(""), y)
+}
+
 // 下面这种写法会出错：试图返回局部变量的引用
 // fn bad<'a>() -> &'a str {
 //     let s = String::from("hello");
@@ -383,7 +395,8 @@ pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
 // }`,
         tips: [
           "生命周期标注描述的是“关系”，不是“时长延长器”",
-          "当函数返回 Vec<&str> 这类引用集合时，优先想清楚它借用了哪个输入"
+          "当函数返回 Vec<&str> 这类引用集合时，优先想清楚它借用了哪个输入",
+          "'a 只是惯例命名，不是必须；关键是绑定关系表达正确"
         ]
       },
       {
