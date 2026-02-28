@@ -353,6 +353,40 @@ fn main() {
         ]
       },
       {
+        id: "cli-lifetime-primer",
+        title: "补充前置：先读懂 search<'a> 里的生命周期",
+        explanation: `在下面的核心函数里会出现这样的签名：
+• search<'a>(..., contents: &'a str, ...) -> Vec<&'a str>
+
+这里的 'a 不是“让引用活得更久”，而是“声明返回值中的引用，必须来自 contents，并且不会比 contents 活得更久”。
+
+为什么要标注：
+• 返回的是引用（&str），不是新分配的 String
+• 编译器需要知道“返回值借用自谁”
+• 用同一个 'a 把输入与输出关联起来，借用关系就清晰了
+
+如果你对生命周期还不熟，可以先记住一句实用规则：
+• “函数返回引用时，要么返回来自某个输入引用的数据，要么返回 'static 引用；不能凭空造出悬垂引用”`,
+        language: "rust",
+        code: `// 返回值借用自 contents
+pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+    contents
+        .lines()
+        .filter(|line| line.contains(query))
+        .collect()
+}
+
+// 下面这种写法会出错：试图返回局部变量的引用
+// fn bad<'a>() -> &'a str {
+//     let s = String::from("hello");
+//     &s
+// }`,
+        tips: [
+          "生命周期标注描述的是“关系”，不是“时长延长器”",
+          "当函数返回 Vec<&str> 这类引用集合时，优先想清楚它借用了哪个输入"
+        ]
+      },
+      {
         id: "cli-core",
         title: "核心逻辑：搜索并返回匹配行",
         explanation: `把搜索逻辑写成纯函数，是最容易测试与复用的方式。
