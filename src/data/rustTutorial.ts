@@ -554,7 +554,45 @@ async fn main() {
       {
         id: "web-state",
         title: "共享状态：注入 AppState",
-        explanation: `当需要数据库连接池、配置或内存缓存时，通常会把状态放到 AppState，并通过 Router 的 state 注入到 handler。`,
+        explanation: `当需要数据库连接池、配置或内存缓存时，通常会把状态放到 AppState，并通过 Router 的 state 注入到 handler。
+
+### 知识点：\`State(state): State<AppState>\` 是“参数解构（模式匹配）”用法
+
+在 Axum 里，\`State<T>\` 是一个 **extractor 包装类型**，本质上类似一个“盒子”，把应用的全局状态 \`T\` 包起来传给 handler。
+
+#### 1) \`State<T>\` 本质结构（可理解为元组结构体）
+
+\`\`\`rust
+pub struct State<T>(pub T);
+\`\`\`
+
+所以里面的值可以用 \`.0\` 取出。
+
+#### 2) 你看到的写法在做什么
+
+\`\`\`rust
+async fn incr(State(state): State<AppState>) -> String
+\`\`\`
+
+含义是：
+
+* \`: State<AppState>\`：这个参数的类型是 \`State<AppState>\`
+* \`State(state)\`：用 **模式匹配**把 \`State(...)\` 解构，取出里面的 \`AppState\`，并绑定为变量 \`state\`
+
+等价于：
+
+\`\`\`rust
+async fn incr(state: State<AppState>) -> String {
+    let state: AppState = state.0; // 拆盒子
+    ...
+}
+\`\`\`
+
+#### 3) 记忆口诀
+
+* \`State<T>\`：状态“盒子”
+* \`State(x)\`：解构/拆盒子，拿到 \`x\`
+* \`State(state): State<AppState>\`：**“参数类型是 State<AppState>，并在参数位置直接拆出里面的 AppState 叫 state”**`,
         code: `use axum::{extract::State, routing::get, Router};
 use std::sync::{Arc, Mutex};
 
